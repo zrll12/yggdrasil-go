@@ -51,7 +51,7 @@ function PlayerModel(props: { skinUrl: string, capeUrl?: string, slim?: boolean 
         playerModel.rotation.y += delta * 0.7;
     });
     return (
-        <primitive object={playerModel} position={[0, -10, 0]}/>
+        <primitive object={playerModel} position={[0, -15, 0]}/>
     );
 }
 
@@ -69,7 +69,7 @@ function SkinRender(props: { skinUrl: string, capeUrl?: string, slim?: boolean }
             </section>
 
             <Canvas
-                camera={{position: [0, 15, 35], near: 5}}
+                camera={{position: [0, 10, 30]}}
                 gl={{antialias: true, alpha: true, preserveDrawingBuffer: true}}
                 onCreated={onCanvasCreate}>
                 <ambientLight color={0xa0a0a0}/>
