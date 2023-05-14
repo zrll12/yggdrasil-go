@@ -25,7 +25,7 @@ import (
 	"yggdrasil-go/service"
 )
 
-func InitRouters(router *gin.Engine, db *gorm.DB, meta *ServerMeta, skinRootUrl string) {
+func InitRouters(router *gin.Engine, db *gorm.DB, meta *ServerMeta, skinRootUrl string, requireCode bool) {
 	router.Use(cors.New(cors.Config{
 		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "HEAD"},
@@ -36,7 +36,7 @@ func InitRouters(router *gin.Engine, db *gorm.DB, meta *ServerMeta, skinRootUrl 
 	}))
 
 	tokenService := service.NewTokenService()
-	userService := service.NewUserService(tokenService, db)
+	userService := service.NewUserService(tokenService, db, requireCode)
 	sessionService := service.NewSessionService(tokenService)
 	textureService := service.NewTextureService(tokenService, db)
 	homeRouter := NewHomeRouter(meta)

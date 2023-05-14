@@ -16,10 +16,10 @@
  */
 
 export type AppState = {
-    login: boolean
-    accessToken: string
-    tokenValid: boolean
-    loginTime: number
-    profileName: string
-    uuid: string
+    login: boolean,
+    accessToken: string,
+    tokenValid: boolean,
+    loginTime: number,
+    profileName: string,
+    uuid: string,
 }

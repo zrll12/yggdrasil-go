@@ -40,6 +40,7 @@ import {FocusedShowHelperText} from './components';
 type Inputs = {
     username: string,
     profileName: string,
+    registerCode: String,
     password: string
 };
 
@@ -58,7 +59,7 @@ function Login(props: { appData: AppState, setAppData: React.Dispatch<React.SetS
                 .then(response => {
                     let data = response.data
                     if (data && data.accessToken) {
-                        enqueueSnackbar("登录成功，accessToken:" + data.accessToken, {variant: 'success'});
+                        enqueueSnackbar("登录成功", {variant: 'success'});
                         setAppData({
                             ...appData,
                             accessToken: data.accessToken,
@@ -84,7 +85,8 @@ function Login(props: { appData: AppState, setAppData: React.Dispatch<React.SetS
             axios.post('/authserver/register', {
                 username: data.username,
                 password: data.password,
-                profileName: data.profileName
+                profileName: data.profileName,
+                register: data.registerCode
             })
                 .then(response => {
                     let data = response.data
@@ -102,8 +104,14 @@ function Login(props: { appData: AppState, setAppData: React.Dispatch<React.SetS
                         let message =  "注册失败: " + errorMessage;
                         if (errorMessage === "profileName exist") {
                             message = "注册失败: 角色名已存在";
-                        } else if (errorMessage === "profileName duplicate") {
+                        } else if (errorMessage === "profile name duplicate") {
                             message = "注册失败: 角色名与正版用户冲突";
+                        } else if (errorMessage === "invalid code") {
+                            message = "注册码无效（如果您没有提供注册码，代表服务器启用了强制注册码）"
+                        } else if (errorMessage === "code run out of frequency") {
+                            message = "注册码可用次数已用尽"
+                        } else if (errorMessage === "code expired") {
+                            message = "注册码已失效"
                         }
                         enqueueSnackbar(message, {variant: 'error'});
                     } else {
@@ -129,11 +137,12 @@ function Login(props: { appData: AppState, setAppData: React.Dispatch<React.SetS
         };
     });
 
+
     return (
         <Container maxWidth={'sm'}>
             <Paper className={'login-card'}>
                 <section className="header">
-                    <h1>简陋注册页</h1>
+                    <h1>注册</h1>
                 </section>
                 <Box component="form" autoComplete="off" onSubmit={handleSubmit(onSubmit)}>
                     <div className='username'>
@@ -164,6 +173,21 @@ function Login(props: { appData: AppState, setAppData: React.Dispatch<React.SetS
                                 }}
                             />
                             <FocusedShowHelperText id="profileName-input-helper-text">字母，数字或下划线</FocusedShowHelperText>
+                        </FormControl>
+                    </Collapse>
+                    <Collapse in={!appData.login} className='registerCode'>
+                        <FormControl fullWidth variant="filled" required={!appData.login} error={errors.profileName && true}>
+                            <InputLabel htmlFor="profileName-input">注册码</InputLabel>
+                            <FilledInput
+                                id="registerCode-input"
+                                name="registerCode"
+                                required={false}
+                                inputProps={appData.login ? {} : {
+                                    minLength: '0', maxLength: 20,
+                                    ...register('registerCode', {required: false, minLength: 0, pattern: /^[a-zA-Z0-9-]{1,16}$/, maxLength: 20})
+                                }}
+                            />
+                            <FocusedShowHelperText id="profileName-input-helper-text">如果您没有注册码，请留空</FocusedShowHelperText>
                         </FormControl>
                     </Collapse>
                     <div className='password'>

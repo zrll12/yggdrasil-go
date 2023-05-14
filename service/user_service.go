@@ -39,7 +39,7 @@ import (
 )
 
 type UserService interface {
-	Register(username string, password string, profileName string) (*model.UserResponse, error)
+	Register(username string, password string, profileName string, comment string) (*model.UserResponse, error)
 	Login(username string, password string, clientToken *string, requestUser bool) (*LoginResponse, error)
 	ChangeProfile(accessToken string, clientToken *string, changeTo string) error
 	Refresh(accessToken string, clientToken *string, requestUser bool, selectedProfile *model.ProfileResponse) (*LoginResponse, error)
@@ -50,6 +50,9 @@ type UserService interface {
 	QueryUUIDs(usernames []string) ([]model.ProfileResponse, error)
 	QueryProfile(profileId uuid.UUID, unsigned bool, textureBaseUrl string) (map[string]interface{}, error)
 	ProfileKey(accessToken string) (*ProfileKeyResponse, error)
+	ExamineCode(code string) (error, bool, string)
+	CreateCode(code string, frequency int) error
+	UseCode(code string) (error, bool)
 }
 
 type LoginResponse struct {
@@ -79,9 +82,10 @@ type userServiceImpl struct {
 	limitLruCache   *lru.Cache
 	profileKeyCache *lru.Cache
 	keyPairCh       chan ProfileKeyPair
+	requireCode     bool
 }
 
-func NewUserService(tokenService TokenService, db *gorm.DB) UserService {
+func NewUserService(tokenService TokenService, db *gorm.DB, requireCode bool) UserService {
 	cache0, _ := lru.New(10000)
 	cache1, _ := lru.New(10000)
 	ch := make(chan ProfileKeyPair, 100)
@@ -91,12 +95,13 @@ func NewUserService(tokenService TokenService, db *gorm.DB) UserService {
 		limitLruCache:   cache0,
 		profileKeyCache: cache1,
 		keyPairCh:       ch,
+		requireCode:     requireCode,
 	}
 	go userService.genKeyPair()
 	return &userService
 }
 
-func (u *userServiceImpl) Register(username string, password string, profileName string) (*model.UserResponse, error) {
+func (u *userServiceImpl) Register(username string, password string, profileName string, comment string) (*model.UserResponse, error) {
 	var count int64
 	if err := u.db.Table("users").Where("email = ?", username).Count(&count).Error; err != nil {
 		return nil, err
@@ -110,7 +115,7 @@ func (u *userServiceImpl) Register(username string, password string, profileName
 	if count > 0 {
 		return nil, util.NewForbiddenOperationError("profileName exist")
 	} else if _, err := mojangUsernameToUUID(profileName); err == nil {
-		return nil, util.NewForbiddenOperationError("profileName duplicate")
+		return nil, util.NewForbiddenOperationError("profile name duplicate")
 	}
 	matched, err := regexp.MatchString("^(\\w){3,}(\\.\\w+)*@(\\w){2,}((\\.\\w+)+)$", username)
 	if err != nil {
@@ -127,6 +132,7 @@ func (u *userServiceImpl) Register(username string, password string, profileName
 		ID:       uuid.New(),
 		Email:    username,
 		Password: string(hashedPass),
+		Comment:  comment,
 	}
 	profile := model.NewProfile(user.ID, profileName, model.STEVE, "")
 	user.SetProfile(&profile)
@@ -205,7 +211,7 @@ func (u *userServiceImpl) ChangeProfile(accessToken string, clientToken *string,
 	if count > 0 {
 		return util.NewForbiddenOperationError("profileName exist")
 	} else if _, err := mojangUsernameToUUID(changeTo); err == nil {
-		return util.NewForbiddenOperationError("profileName duplicate")
+		return util.NewForbiddenOperationError("profile name duplicate")
 	}
 	if isInvalidProfileName(changeTo) {
 		return util.NewForbiddenOperationError("bad format(profileName longer than 1)")
@@ -479,6 +485,54 @@ func (u *userServiceImpl) genKeyPair() {
 		}))
 		u.keyPairCh <- keyPair
 	}
+}
+
+func (u *userServiceImpl) ExamineCode(code string) (error, bool, string) {
+	if !u.requireCode {
+		return nil, true, ""
+	}
+
+	codeDetail := model.RegisterCode{}
+	if err := u.db.Where("code = ?", code).First(&codeDetail).Error; err != nil {
+		return util.NewForbiddenOperationError("invalid code"), false, ""
+	}
+	if codeDetail.Frequency == 0 {
+		return util.NewForbiddenOperationError("code run out of frequency"), false, ""
+	}
+
+	if codeDetail.UseBefore.Before(time.Now().UTC()) {
+		return util.NewForbiddenOperationError("code expired"), false, ""
+	}
+
+	return nil, true, codeDetail.Comment
+}
+
+func (u *userServiceImpl) CreateCode(code string, frequency int) error {
+	codeDetail := model.RegisterCode{
+		Code:      code,
+		UseBefore: time.Now().UTC().AddDate(0, 0, 14),
+		Frequency: frequency,
+	}
+
+	if err := u.db.Create(&codeDetail).Error; err != nil {
+		return err
+	}
+
+	return util.NewForbiddenOperationError("Invalid code")
+}
+
+func (u *userServiceImpl) UseCode(code string) (error, bool) {
+	codeDetail := model.RegisterCode{}
+	if err := u.db.Where("code = ?", code).First(&codeDetail).Error; err == nil {
+		if codeDetail.Frequency == 0 {
+			return util.NewForbiddenOperationError("code run out of frequency"), false
+		}
+
+		if err = u.db.Model(&codeDetail).Update("frequency", codeDetail.Frequency-1).Error; err != nil {
+			return util.NewForbiddenOperationError("cannot update db"), false
+		}
+	}
+	return nil, true
 }
 
 func mojangUsernameToUUID(username string) (model.ProfileResponse, error) {

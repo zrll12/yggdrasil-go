@@ -34,6 +34,7 @@ type User struct {
 	ProfileModelType   string   `gorm:"size:8;default:STEVE"`
 	SerializedTextures string   `gorm:"type:TEXT NULL"`
 	profile            *Profile `gorm:"-"`
+	Comment            string   `gorm:"type:string;size:255;"`
 }
 
 func (u *User) Profile() (*Profile, error) {

@@ -26,10 +26,11 @@
 
 .username,
 .profileName,
+.registerCode,
 .password {
     display: block;
     width: 87%;
-    margin: 20px auto;
+    margin: 10px auto;
 }
 
 .button-container {

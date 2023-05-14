@@ -19,6 +19,7 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"math/rand"
 	"net/http"
 	"strings"
 	"yggdrasil-go/model"
@@ -54,9 +55,10 @@ func NewUserRouter(userService service.UserService, skinRootUrl string) UserRout
 }
 
 type RegRequest struct {
-	Username    string `json:"username" binding:"required,email"`
-	Password    string `json:"password" binding:"required"`
-	ProfileName string `json:"profileName" binding:"required"`
+	Username     string `json:"username" binding:"required,email"`
+	Password     string `json:"password" binding:"required"`
+	ProfileName  string `json:"profileName" binding:"required"`
+	RegisterCode string `json:"register"`
 }
 
 type MinecraftAgent struct {
@@ -116,11 +118,26 @@ func (u *userRouterImpl) Register(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusForbidden, util.NewForbiddenOperationError(err.Error()))
 		return
 	}
-	response, err := u.userService.Register(request.Username, request.Password, request.ProfileName)
+
+	comment := ""
+	if err, result, comm := u.userService.ExamineCode(request.RegisterCode); err != nil || !result {
+		c.AbortWithStatusJSON(http.StatusForbidden, err.Error())
+		return
+	} else {
+		comment = comm
+	}
+
+	response, err := u.userService.Register(request.Username, request.Password, request.ProfileName, comment)
 	if err != nil {
 		util.HandleError(c, err)
 		return
 	}
+
+	if err, result := u.userService.UseCode(request.RegisterCode); err != nil || !result {
+		c.AbortWithStatusJSON(http.StatusForbidden, err.Error())
+		return
+	}
+
 	c.JSON(http.StatusOK, response)
 }
 
@@ -278,4 +295,15 @@ func (u *userRouterImpl) ProfileKey(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, response)
+}
+
+const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func randomString(n int) string {
+	sb := strings.Builder{}
+	sb.Grow(n)
+	for i := 0; i < n; i++ {
+		sb.WriteByte(charset[rand.Intn(len(charset))])
+	}
+	return sb.String()
 }

@@ -42,6 +42,7 @@ import {FocusedShowHelperText} from './components';
 import {SubmitHandler, useForm} from 'react-hook-form';
 import axios from 'axios';
 import SkinRender from './skinrender/skin-render';
+import {vibrance} from "three/examples/jsm/nodes/shadernode/ShaderNodeElements";
 
 function handleMouseDown(event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
@@ -57,7 +58,6 @@ function UploadTextureForm(props: {
     const [submitting, setSubmitting] = React.useState(false);
 
     const {enqueueSnackbar} = useSnackbar();
-
     const fileInputElem = React.useRef<HTMLInputElement>(null);
     const [filePath, setFilePath] = React.useState('');
     const handleFilePathChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,7 +98,7 @@ function UploadTextureForm(props: {
         setType(event.target.value);
     };
 
-    const [model, setModel] = React.useState('default');
+    const [model, setModel] = React.useState(skinData?.slim ? "slim": "default");
     const handleModelChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setModel(event.target.value);
 
@@ -158,12 +158,11 @@ function UploadTextureForm(props: {
                             data.skinUrl = profile.textures.SKIN.url;
                             data.slim = profile.textures.SKIN.metadata ? profile.textures.SKIN.metadata.model == 'slim' : false;
                         } else {
-                            let index = getUUIDHashCode(appData.uuid) % DEFAULT_SKINS.length;
-                            data.skinUrl = DEFAULT_SKINS[index].skinUrl;
-                            data.slim = DEFAULT_SKINS[index].slim;
+                            // let index = getUUIDHashCode(appData.uuid) % DEFAULT_SKINS.length;
+                            data.skinUrl = "default";
                         }
                         if (profile.textures.CAPE) {
-                           data.capeUrl = profile.textures.CAPE.url;
+                            data.capeUrl = profile.textures.CAPE.url;
                         }
                         setSkinData(data);
                     }
@@ -198,9 +197,9 @@ function UploadTextureForm(props: {
                     });
                 } else {
                     // 显示默认材质
-                    let index = getUUIDHashCode(appData.uuid) % DEFAULT_SKINS.length;
+                    // let index = getUUIDHashCode(appData.uuid) % DEFAULT_SKINS.length;
                     setSkinData({
-                        ...DEFAULT_SKINS[index],
+                        skinUrl: "default",
                         capeUrl: skinData.capeUrl
                     });
                 }
@@ -288,7 +287,8 @@ function UploadTextureForm(props: {
                                 onClick: () => fileInputElem.current?.click()
                             }}
                         />
-                        <input id="file-input-real" type="file" name="file" hidden ref={fileInputElem} accept="image/*" value={filePath} onChange={handleFilePathChange}/>
+                        <input id="file-input-real" type="file" name="file" hidden ref={fileInputElem} accept="image/*"
+                               value={filePath} onChange={handleFilePathChange}/>
                     </FormControl>
                 </Collapse>
                 <div className="button-container">
@@ -363,10 +363,16 @@ function ChangeProfileForm(props: { appData: AppState, setAppData: React.Dispatc
                             required
                             inputProps={{
                                 minLength: '2', maxLength: 16,
-                                ...register('changeTo', {required: true, minLength: 2, pattern: /^[a-zA-Z0-9_]{1,16}$/, maxLength: 16})
+                                ...register('changeTo', {
+                                    required: true,
+                                    minLength: 2,
+                                    pattern: /^[a-zA-Z0-9_]{1,16}$/,
+                                    maxLength: 16
+                                })
                             }}
                         />
-                        <FocusedShowHelperText id="profileName-input-helper-text">字母，数字或下划线</FocusedShowHelperText>
+                        <FocusedShowHelperText
+                            id="profileName-input-helper-text">字母，数字或下划线</FocusedShowHelperText>
                     </FormControl>
                 </div>
                 <div className="button-container">
@@ -383,27 +389,27 @@ type SkinData = {
     slim?: boolean
 }
 
-const DEFAULT_SKINS: SkinData[] = [
-    {skinUrl: 'player/slim/alex.png', slim: true},
-    {skinUrl: 'player/slim/ari.png', slim: true},
-    {skinUrl: 'player/slim/efe.png', slim: true},
-    {skinUrl: 'player/slim/kai.png', slim: true},
-    {skinUrl: 'player/slim/makena.png', slim: true},
-    {skinUrl: 'player/slim/noor.png', slim: true},
-    {skinUrl: 'player/slim/steve.png', slim: true},
-    {skinUrl: 'player/slim/sunny.png', slim: true},
-    {skinUrl: 'player/slim/zuri.png', slim: true},
-
-    {skinUrl: 'player/wide/alex.png'},
-    {skinUrl: 'player/wide/ari.png'},
-    {skinUrl: 'player/wide/efe.png'},
-    {skinUrl: 'player/wide/kai.png'},
-    {skinUrl: 'player/wide/makena.png'},
-    {skinUrl: 'player/wide/noor.png'},
-    {skinUrl: 'player/wide/steve.png'},
-    {skinUrl: 'player/wide/sunny.png'},
-    {skinUrl: 'player/wide/zuri.png'},
-];
+// const DEFAULT_SKINS: SkinData[] = [
+//     {skinUrl: 'player/slim/alex.png', slim: true},
+//     {skinUrl: 'player/slim/ari.png', slim: true},
+//     {skinUrl: 'player/slim/efe.png', slim: true},
+//     {skinUrl: 'player/slim/kai.png', slim: true},
+//     {skinUrl: 'player/slim/makena.png', slim: true},
+//     {skinUrl: 'player/slim/noor.png', slim: true},
+//     {skinUrl: 'player/slim/steve.png', slim: true},
+//     {skinUrl: 'player/slim/sunny.png', slim: true},
+//     {skinUrl: 'player/slim/zuri.png', slim: true},
+//
+//     {skinUrl: 'player/wide/alex.png'},
+//     {skinUrl: 'player/wide/ari.png'},
+//     {skinUrl: 'player/wide/efe.png'},
+//     {skinUrl: 'player/wide/kai.png'},
+//     {skinUrl: 'player/wide/makena.png'},
+//     {skinUrl: 'player/wide/noor.png'},
+//     {skinUrl: 'player/wide/steve.png'},
+//     {skinUrl: 'player/wide/sunny.png'},
+//     {skinUrl: 'player/wide/zuri.png'},
+// ];
 
 function User(props: { appData: AppState, setAppData: React.Dispatch<React.SetStateAction<AppState>> }) {
     const {appData, setAppData} = props;
@@ -432,29 +438,44 @@ function User(props: { appData: AppState, setAppData: React.Dispatch<React.SetSt
                 });
             } else if (profile.textures && profile.textures.CAPE) {
                 // 显示默认材质
-                let index = getUUIDHashCode(appData.uuid) % DEFAULT_SKINS.length;
+                // let index = getUUIDHashCode(appData.uuid) % DEFAULT_SKINS.length;
                 setSkinData({
-                    ...DEFAULT_SKINS[index],
+                    skinUrl: "default",
                     capeUrl: profile.textures.CAPE.url
                 });
             } else {
                 // 显示默认材质
-                let index = getUUIDHashCode(appData.uuid) % DEFAULT_SKINS.length;
-                setSkinData(DEFAULT_SKINS[index]);
+                // let index = getUUIDHashCode(appData.uuid) % DEFAULT_SKINS.length;
+                setSkinData({
+                    skinUrl: "default"
+                });
             }
         });
     }, [appData]);
+
+    const logOut = () => {
+        setAppData({
+            ...appData,
+            accessToken: "",
+            tokenValid: false,
+            loginTime: 0,
+            profileName: "",
+            uuid: ""
+        });
+    };
 
     return (
         <Container maxWidth={'sm'}>
             <Paper className={'user-card'}>
                 <section className="header">
-                    <h1>简陋信息页</h1>
+                    <h1 className="title">玩家信息</h1>
+                    <Button className="exit" onClick={logOut}>退出登录</Button>
                 </section>
 
-                <UploadTextureForm appData={appData} setAppData={setAppData} skinData={skinData} setSkinData={setSkinData}/>
+                <UploadTextureForm appData={appData} setAppData={setAppData} skinData={skinData}
+                                   setSkinData={setSkinData}/>
 
-                {skinData && <SkinRender skinUrl={skinData.skinUrl} capeUrl={skinData.capeUrl} slim={skinData.slim}/>}
+                {skinData && skinData.skinUrl != "default" && <SkinRender skinUrl={skinData.skinUrl} capeUrl={skinData.capeUrl} slim={skinData.slim}/>}
 
                 <ChangeProfileForm appData={appData} setAppData={setAppData}/>
             </Paper>

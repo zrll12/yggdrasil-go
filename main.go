@@ -49,6 +49,8 @@ type MetaCfg struct {
 	ImplementationVersion string   `ini:"implementation_version"`
 	SkinDomains           []string `ini:"skin_domains"`
 	SkinRootUrl           string   `ini:"skin_root_url"`
+	EnableHttps           bool     `ini:"enable_https"`
+	RequireCode           bool     `ini:"require_code"`
 }
 
 type ServerCfg struct {
@@ -68,6 +70,8 @@ func main() {
 		ImplementationVersion: "v0.0.1",
 		SkinDomains:           []string{".example.com", "localhost"},
 		SkinRootUrl:           "http://localhost:8080",
+		EnableHttps:           false,
+		RequireCode:           true,
 	}
 	err = cfg.Section("meta").MapTo(&meta)
 	if err != nil {
@@ -84,6 +88,8 @@ func main() {
 	pathSection := cfg.Section("paths")
 	privateKeyPath := pathSection.Key("private_key_file").MustString("private.pem")
 	publicKeyPath := pathSection.Key("public_key_file").MustString("public.pem")
+	httpsKey := pathSection.Key("https_key_file").MustString("https.key")
+	httpsCert := pathSection.Key("https_cert_file").MustString("https.crt")
 	serverCfg := ServerCfg{
 		ServerAddress: ":8080",
 		TrustedProxies: []string{
@@ -119,7 +125,7 @@ func main() {
 	if err != nil {
 		log.Fatal("无法连接数据库", err)
 	}
-	err = db.AutoMigrate(&model.User{}, &model.Texture{})
+	err = db.AutoMigrate(&model.User{}, &model.Texture{}, &model.RegisterCode{})
 	if err != nil {
 		log.Fatal("无法导入数据库", err)
 	}
@@ -138,7 +144,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	router.InitRouters(r, db, &serverMeta, meta.SkinRootUrl)
+	router.InitRouters(r, db, &serverMeta, meta.SkinRootUrl, meta.RequireCode)
 	assetsFs, err := fs.Sub(f, "assets")
 	if err != nil {
 		log.Fatal(err)
@@ -149,8 +155,27 @@ func main() {
 		Handler: r,
 	}
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
-			log.Printf("listen: %s\n", err)
+		if meta.EnableHttps {
+			log.Printf("HTTPS 已启用")
+			err := srv.ListenAndServeTLS(httpsCert, httpsKey)
+			if err != nil {
+				if errors.Is(err, http.ErrServerClosed) {
+					log.Printf("服务器关闭: %s\n", err)
+				} else if errors.Is(err, fs.ErrNotExist) {
+					log.Fatalf("找不到文件: %s\n", err)
+				} else {
+					log.Printf("服务器错误: %s\n", err)
+				}
+			}
+
+		} else {
+			log.Printf("HTTPS 未启用")
+			err := srv.ListenAndServe()
+			if err != nil && errors.Is(err, http.ErrServerClosed) {
+				log.Printf("服务器关闭: %s\n", err)
+			} else {
+				log.Printf("服务器错误: %s\n", err)
+			}
 		}
 	}()
 	log.Printf("已启动, 地址: %s\n", srv.Addr)

@@ -12,9 +12,8 @@
 
 用于服务器管理员调试和测试时使用小号登录而不必关闭在线验证 (online-mode)。
 
-禁止使玩家绕过在线验证登录服务器而不必购买 Minecraft。
 
-禁止其他违反 [EULA](https://account.mojang.com/documents/minecraft_eula) 的行为。
+禁止违反 [EULA](https://account.mojang.com/documents/minecraft_eula) 的行为。
 
 ## 用法
 
@@ -26,10 +25,14 @@
 
 注册地址在 `/profile/`。
 
-## Docker
+## 编译命令
 
-使用 docker 快速上手：
+- 先在frontent目录下运行`npm install && npm run build`
+
+- 之后将dist目录复制进根目录并改名assets
+
+- 最后在根目录下运行go编译（以需要sqlite和mysql为例）
 
 ```shell
-docker run -d --name yggdrasil-go -v $(pwd)/data:/app/data -p 8080:8080 gardel/yggdrasil-go:latest
+go build --tags 'nomsgpack sqlite mysql'
 ```

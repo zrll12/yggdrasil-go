@@ -60,10 +60,12 @@ function SkinRender(props: { skinUrl: string, capeUrl?: string, slim?: boolean }
         state.gl.shadowMap.enabled = true;
         state.gl.shadowMap.type = THREE.PCFSoftShadowMap;
     };
+
+
     return (
-        <Box component="div" height="600px">
+        <Box component="div" height="350px">
             <section className="header">
-                <h3>预览</h3>
+                <h3>预览（当前为 {props.slim ? "Alex" : "Steve"}）</h3>
             </section>
 
             <Canvas
@@ -78,13 +80,15 @@ function SkinRender(props: { skinUrl: string, capeUrl?: string, slim?: boolean }
                         blendFunction={BlendFunction.OVERLAY}
                         samples={30}
                         rings={4}
-                        distanceThreshold={1.0}
-                        distanceFalloff={0.0}
+                        worldDistanceThreshold={1.0}
+                        worldDistanceFalloff={0.0}
+                        worldProximityThreshold={0.0}
+                        worldProximityFalloff={0.0}
                         rangeThreshold={0.5}
                         rangeFalloff={0.1}
                         luminanceInfluence={0.9}
                         radius={20}
-                        scale={0.5}
+                        resolutionScale={0.5}
                         bias={0.5}
                     />
                 </EffectComposer>

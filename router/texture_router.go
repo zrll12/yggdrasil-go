@@ -111,7 +111,7 @@ func (t *textureRouterImpl) UploadTexture(c *gin.Context) {
 	}
 	modelStr := c.PostForm("model")
 	modelType := model.STEVE
-	if modelStr == "ALEX" {
+	if modelStr == "slim" {
 		modelType = model.ALEX
 	}
 	file, err := c.FormFile("file")
