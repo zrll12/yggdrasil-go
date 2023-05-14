@@ -225,7 +225,7 @@ func (t *textureServiceImpl) saveTexture(user *model.User, skinImage image.Image
 				return err
 			}
 		} else {
-			if oldExist && oldHash != hash {
+			if oldHash != hash {
 				tx.Model(&texture).Update("used", gorm.Expr("used + ?", 1))
 			}
 		}
@@ -235,7 +235,7 @@ func (t *textureServiceImpl) saveTexture(user *model.User, skinImage image.Image
 				if oldTexture.Used < 2 {
 					tx.Delete(&oldTexture)
 				} else {
-					tx.Model(&oldTexture).Update("used", gorm.Expr("used - ?", 1))
+					tx.Model(&oldTexture).Update("used", gorm.Expr("used - 1"))
 				}
 			}
 		}
