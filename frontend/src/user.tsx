@@ -42,7 +42,6 @@ import {FocusedShowHelperText} from './components';
 import {SubmitHandler, useForm} from 'react-hook-form';
 import axios from 'axios';
 import SkinRender from './skinrender/skin-render';
-import {vibrance} from "three/examples/jsm/nodes/shadernode/ShaderNodeElements";
 
 function handleMouseDown(event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
@@ -483,13 +482,13 @@ function User(props: { appData: AppState, setAppData: React.Dispatch<React.SetSt
     );
 }
 
-function getUUIDHashCode(uuid: string) {
-    const uuidNoDash = uuid.replace(/-/g, '');
-    const mostMost = parseInt(uuidNoDash.substring(0, 8), 16);
-    const mostLeast = parseInt(uuidNoDash.substring(8, 16), 16);
-    const leastMost = parseInt(uuidNoDash.substring(16, 24), 16);
-    const leastLeast = parseInt(uuidNoDash.substring(24, 32), 16);
-    return mostMost ^ mostLeast ^ leastMost ^ leastLeast;
-}
+// function getUUIDHashCode(uuid: string) {
+//     const uuidNoDash = uuid.replace(/-/g, '');
+//     const mostMost = parseInt(uuidNoDash.substring(0, 8), 16);
+//     const mostLeast = parseInt(uuidNoDash.substring(8, 16), 16);
+//     const leastMost = parseInt(uuidNoDash.substring(16, 24), 16);
+//     const leastLeast = parseInt(uuidNoDash.substring(24, 32), 16);
+//     return mostMost ^ mostLeast ^ leastMost ^ leastLeast;
+// }
 
 export default User;

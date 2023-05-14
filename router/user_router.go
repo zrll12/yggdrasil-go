@@ -19,7 +19,6 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
-	"math/rand"
 	"net/http"
 	"strings"
 	"yggdrasil-go/model"
@@ -295,15 +294,4 @@ func (u *userRouterImpl) ProfileKey(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, response)
-}
-
-const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-func randomString(n int) string {
-	sb := strings.Builder{}
-	sb.Grow(n)
-	for i := 0; i < n; i++ {
-		sb.WriteByte(charset[rand.Intn(len(charset))])
-	}
-	return sb.String()
 }

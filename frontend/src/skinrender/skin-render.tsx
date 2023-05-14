@@ -21,7 +21,7 @@ import {Canvas, RootState, useFrame, useLoader} from '@react-three/fiber';
 import React from 'react';
 import createPlayerModel from './utils';
 import {OrbitControls} from '@react-three/drei';
-import {EffectComposer, Vignette, SMAA, SSAO, SSR} from '@react-three/postprocessing';
+import {EffectComposer, SSAO} from '@react-three/postprocessing';
 import {BlendFunction} from 'postprocessing';
 
 function PlayerModel(props: { skinUrl: string, capeUrl?: string, slim?: boolean }) {
